@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Birthdate Form</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f3f4f6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .card {
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    width: 350px;
+    max-width: 95%;
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .input-group {
+    position: relative;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+
+  button {
+    margin-top: 15px;
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #1e40af;
+  }
+
+  .result {
+    margin-top: 15px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  /* Datepicker */
+  .calendar {
+    position: absolute;
+    top: 45px;
+    left: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 10px;
+    display: none;
+    z-index: 10;
+    width: 100%;
+  }
+
+  .calendar header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .calendar button {
+    background: none;
+    color: black;
+    padding: 5px;
+    width: auto;
+  }
+
+  .days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+  }
+
+  .day {
+    padding: 8px;
+    text-align: center;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .day:hover {
+    background: #2563eb;
+    color: white;
+  }
+
+  @media(max-width:500px){
+    .card{
+      width:100%;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Birthdate Calculator</h2>
+
+  <form id="form">
+    <div class="input-group">
+      <input type="text" id="dateInput" placeholder="Select birthdate" readonly>
+      <div class="calendar" id="calendar"></div>
+    </div>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+const input = document.getElementById("dateInput");
+const calendar = document.getElementById("calendar");
+let current = new Date();
+
+input.addEventListener("click", () => {
+  calendar.style.display = "block";
+  renderCalendar();
+});
+
+function renderCalendar() {
+  calendar.innerHTML = "";
+
+  const year = current.getFullYear();
+  const month = current.getMonth();
+
+  const header = document.createElement("header");
+
+  const prev = document.createElement("button");
+  prev.textContent = "<";
+  prev.onclick = () => {
+    current.setMonth(current.getMonth() - 1);
+    renderCalendar();
+  };
+
+  const next = document.createElement("button");
+  next.textContent = ">";
+  next.onclick = () => {
+    current.setMonth(current.getMonth() + 1);
+    renderCalendar();
+  };
+
+  const title = document.createElement("span");
+  title.textContent = `${current.toLocaleString("default",{month:"long"})} ${year}`;
+
+  header.append(prev, title, next);
+  calendar.appendChild(header);
+
+  const daysContainer = document.createElement("div");
+  daysContainer.className = "days";
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const totalDays = new Date(year, month + 1, 0).getDate();
+
+  for(let i=0;i<firstDay;i++){
+    daysContainer.appendChild(document.createElement("div"));
+  }
+
+  for(let day=1; day<=totalDays; day++){
+    const d = document.createElement("div");
+    d.className = "day";
+    d.textContent = day;
+
+    d.onclick = () => {
+      const selected = new Date(year, month, day);
+      input.value = selected.toISOString().split("T")[0];
+      calendar.style.display = "none";
+    };
+
+    daysContainer.appendChild(d);
+  }
+
+  calendar.appendChild(daysContainer);
+}
+
+// Close if clicked outside
+document.addEventListener("click", e => {
+  if(!calendar.contains(e.target) && e.target !== input){
+    calendar.style.display = "none";
+  }
+});
+
+// Form submit
+document.getElementById("form").addEventListener("submit", e => {
+  e.preventDefault();
+  const value = input.value;
+  const result = document.getElementById("result");
+
+  if(!value){
+    result.textContent = "Please select a birthdate.";
+    result.style.color = "red";
+    return;
+  }
+
+  const birth = new Date(value);
+  const today = new Date();
+
+  if(birth > today){
+    result.textContent = "Birthdate cannot be in the future.";
+    result.style.color = "red";
+    return;
+  }
+
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+
+  if(m < 0 || (m === 0 && today.getDate() < birth.getDate())){
+    age--;
+  }
+
+  result.style.color = "green";
+  result.textContent = `You selected: ${value} | Age: ${age}`;
+});
+</script>
+
+</body>
+</html>

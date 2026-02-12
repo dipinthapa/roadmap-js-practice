@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Birthdate Calculator</title>
+
+<script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+
+<style>
+body{
+  font-family: Arial;
+  background:#f3f4f6;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.card{
+  background:white;
+  padding:25px;
+  border-radius:12px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.1);
+  width:360px;
+}
+.input-group{ position:relative; }
+input{
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  cursor:pointer;
+}
+.calendar{
+  position:absolute;
+  top:45px;
+  width:100%;
+  background:white;
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:10px;
+  display:none;
+  z-index:10;
+}
+.header{
+  display:flex;
+  gap:5px;
+  margin-bottom:10px;
+}
+select{
+  padding:5px;
+  border-radius:6px;
+}
+.days{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:5px;
+}
+.day{
+  padding:8px;
+  text-align:center;
+  border-radius:6px;
+  cursor:pointer;
+}
+.day:hover{
+  background:#2563eb;
+  color:white;
+}
+button{
+  margin-top:15px;
+  width:100%;
+  padding:12px;
+  background:#2563eb;
+  color:white;
+  border:none;
+  border-radius:8px;
+}
+.result{ margin-top:15px; text-align:center; font-weight:bold;}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+<h2>Birthdate Calculator</h2>
+
+<form id="form">
+<div class="input-group">
+<input type="text" id="dateInput" placeholder="Select birthdate" readonly>
+<div class="calendar" id="calendar"></div>
+</div>
+
+<button type="submit">Calculate Age</button>
+</form>
+
+<div class="result" id="result"></div>
+</div>
+
+<script>
+const input=document.getElementById("dateInput");
+const calendar=document.getElementById("calendar");
+const result=document.getElementById("result");
+
+let current=new Date();
+
+/* open */
+input.addEventListener("click",(e)=>{
+  e.stopPropagation();
+  calendar.style.display="block";
+  renderCalendar();
+});
+
+calendar.addEventListener("click",e=>e.stopPropagation());
+document.addEventListener("click",()=>calendar.style.display="none");
+
+/* render */
+function renderCalendar(){
+calendar.innerHTML="";
+
+const year=current.getFullYear();
+const month=current.getMonth();
+
+/* header dropdowns */
+const header=document.createElement("div");
+header.className="header";
+
+/* month select */
+const monthSelect=document.createElement("select");
+const months=[
+"January","February","March","April","May","June",
+"July","August","September","October","November","December"
+];
+
+months.forEach((m,i)=>{
+  const opt=document.createElement("option");
+  opt.value=i;
+  opt.textContent=m;
+  if(i===month) opt.selected=true;
+  monthSelect.appendChild(opt);
+});
+
+monthSelect.onchange=(e)=>{
+  current.setMonth(parseInt(e.target.value));
+  renderCalendar();
+};
+
+/* year select */
+const yearSelect=document.createElement("select");
+const currentYear=new Date().getFullYear();
+
+for(let y=currentYear; y>=1900; y--){
+  const opt=document.createElement("option");
+  opt.value=y;
+  opt.textContent=y;
+  if(y===year) opt.selected=true;
+  yearSelect.appendChild(opt);
+}
+
+yearSelect.onchange=(e)=>{
+  current.setFullYear(parseInt(e.target.value));
+  renderCalendar();
+};
+
+header.append(monthSelect,yearSelect);
+calendar.appendChild(header);
+
+/* days */
+const daysContainer=document.createElement("div");
+daysContainer.className="days";
+
+const firstDay=new Date(year,month,1).getDay();
+const totalDays=new Date(year,month+1,0).getDate();
+
+for(let i=0;i<firstDay;i++){
+  daysContainer.appendChild(document.createElement("div"));
+}
+
+for(let day=1; day<=totalDays; day++){
+  const d=document.createElement("div");
+  d.className="day";
+  d.textContent=day;
+
+  d.onclick=()=>{
+    const selected=new Date(year,month,day);
+    input.value=selected.toISOString().split("T")[0];
+    calendar.style.display="none";
+  };
+
+  daysContainer.appendChild(d);
+}
+
+calendar.appendChild(daysContainer);
+}
+
+/* submit */
+document.getElementById("form").addEventListener("submit",e=>{
+e.preventDefault();
+
+if(!input.value){
+  result.textContent="Please select a date";
+  result.style.color="red";
+  return;
+}
+
+const {DateTime,Interval}=luxon;
+
+const birth=DateTime.fromISO(input.value);
+const today=DateTime.now();
+
+const diff=Interval.fromDateTimes(birth,today)
+  .toDuration(["years","months","days"])
+  .toObject();
+
+result.style.color="green";
+result.textContent=
+`Age: ${diff.years} years, ${diff.months} months, ${Math.floor(diff.days)} days`;
+});
+</script>
+
+</body>
+</html>
